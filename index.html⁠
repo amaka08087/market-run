@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Run</title>
+<style>
+body {
+margin: 0;
+padding: 0;
+background: #222;
+color: #fff;
+font-family: Arial, sans-serif;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+height: 100vh;
+touch-action: manipulation;
+}
+canvas {
+border: 4px solid #fff;
+background: #eef2f3;
+max-width: 100%;
+height: auto;
+}
+.ui {
+margin-top: 10px;
+font-size: 20px;
+font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div class="ui">Score: <span id="score">0</span></div>
+<canvas id="gameCanvas" width="400" height="500"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const scoreElement = document.getElementById("score");
+let score = 0;
+let isGameOver = false;
+let player = {
+x: 180,
+y: 420,
+width: 40,
+height: 50,
+speed: 5
+};
+let obstacles = [];
+let frameCount = 0;
+// Controls for mobile/desktop touch or click
+window.addEventListener("keydown", (e) => {
+if (e.key === "ArrowLeft" && player.x > 0) {
+player.x -= 20;
+} else if (e.key === "ArrowRight" && player.x < canvas.width - player.width) {
+player.x += 20;
+}
+});
+canvas.addEventListener("click", (e) => {
+let rect = canvas.getBoundingClientRect();
+let clickX = e.clientX - rect.left;
+if (clickX < canvas.width / 2 && player.x > 0) {
+player.x -= 30;
+} else if (clickX >= canvas.width / 2 && player.x < canvas.width - player.width) {
+player.x += 30;
+}
+});
+function spawnObstacle() {
+let width = 40;
+let x = Math.random() * (canvas.width - width);
+obstacles.push({ x: x, y: -50, width: width, height: 40, speed: 3 });
+}
+function update() {
+if (isGameOver) return;
+frameCount++;
+if (frameCount % 90 === 0) {
+spawnObstacle();
+}
+for (let i = obstacles.length - 1; i >= 0; i--) {
+obstacles[i].y += obstacles[i].speed;
+// Collision detection
+if (
+player.x < obstacles[i].x + obstacles[i].width &&
+player.x + player.width > obstacles[i].x &&
+player.y < obstacles[i].y + obstacles[i].height &&
+player.y + player.height > obstacles[i].y
+) {
+isGameOver = true;
+}
+// Remove off-screen obstacles
+if (obstacles[i].y > canvas.height) {
+obstacles.splice(i, 1);
+score += 10;
+scoreElement.innerText = score;
+}
+}
+}
+function draw() {
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+// Draw Player (Market Runner)
+ctx.fillStyle = "#ff5722";
+ctx.fillRect(player.x, player.y, player.width, player.height);
+// Draw Obstacles (Market Baskets/Hurdles)
+ctx.fillStyle = "#3f51b5";
+for (let obs of obstacles) {
+ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+}
+if (isGameOver) {
+ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.fillStyle = "#fff";
+ctx.font = "30px Arial";
+ctx.fillText("Game Over!", 115, 240);
+ctx.font = "16px Arial";
+ctx.fillText("Refresh page to play again", 105, 280);
+}
+}
+function loop() {
+update();
+draw();
+if (!isGameOver) {
+requestAnimationFrame(loop);
+}
+}
+loop();
+</script>
+</body>
+</html>
